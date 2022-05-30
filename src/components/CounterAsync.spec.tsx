@@ -1,14 +1,19 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  waitForElementToBeRemoved,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event'; // this
-import { act } from 'react-dom/test-utils';
 import { CounterAsync } from './CounterAsync';
 
 // following v14 of user-event userEvent should now be instantiated this way
 const user = userEvent.setup();
-const testSetup = () =>
-  render(<CounterAsync defaultCount={0} description="My Counter" />);
 
 describe('Counter', () => {
+  const testSetup = () =>
+    render(<CounterAsync defaultCount={0} description="My Counter" />);
   // can wrap describe with other describe blocks (this is purely for legibility)
   describe('initialized with defaultCount = 0, and descritpion = "My Counter"', () => {
     // use beforeEach to run code before every test (it)
@@ -41,6 +46,46 @@ describe('Counter', () => {
           expect(screen.getByText('Current Count: 1')).toBeInTheDocument()
         );
       });
+    });
+  });
+});
+
+describe('Counter with Incrementer', () => {
+  // this basically functions as beforeEach()
+  const testSetup = async () => {
+    render(<CounterAsync defaultCount={10} description="My Incrementor" />);
+    await user.type(
+      screen.getByLabelText(/Increment/, { selector: 'input' }),
+      '{selectall}{backspace}5'
+    );
+    await user.click(screen.getByRole('button', { name: 'Add to counter' }));
+    await waitFor(() => screen.getByText('Current Count: 15')); //
+  };
+
+  describe('initialized with defaultCount = 10, and descritpion = "My Incrementor"', () => {
+    it('renders title as "My Incrementor"', async () => {
+      await testSetup();
+      expect(screen.getByText(/My Incrementor/)).toBeInTheDocument();
+    });
+  });
+
+  describe('when user sets increment to 5 and then clicks "+" button', () => {
+    it('has increment input value of 5 (number)', async () => {
+      await testSetup();
+      expect(screen.getByLabelText(/Increment/)).toHaveValue(5);
+    });
+
+    it('renders "Current Count: 15"', async () => {
+      await testSetup();
+      expect(screen.getByText('Current Count: 15')).toBeInTheDocument();
+    });
+
+    it('removes "If current 15+, I will disappear." after 300ms', async () => {
+      await testSetup();
+      // queryByText is used here because it will return null rather than throw exception like findBy
+      await waitForElementToBeRemoved(() =>
+        screen.queryByText('If current 15+, I will disappear.')
+      );
     });
   });
 });

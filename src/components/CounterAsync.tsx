@@ -29,7 +29,7 @@ export function CounterAsync({ description, defaultCount }: CounterProps) {
           type="number"
           value={incrementor}
           onChange={(event) => {
-            setIncrementor(parseInt(event.target.value) || 1);
+            setIncrementor(parseInt(event.target.value) || 0);
           }}
         />
       </label>
